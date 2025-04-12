@@ -28,6 +28,9 @@ ExternalProject_Add(
     GIT_TAG v1.91.9b
     DEPENDS sdl
     UPDATE_DISCONNECTED TRUE
+    LOG_CONFIGURE ON
+    LOG_BUILD ON
+    LOG_INSTALL ON
     CMAKE_ARGS 
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}  # Set the install prefix
     -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}  # Set the prefix path to SDL
@@ -44,16 +47,14 @@ ExternalProject_Add(
                   <SOURCE_DIR>/imgui_widgets.cpp
                   <SOURCE_DIR>/backends/imgui_impl_sdl3.cpp
                   <SOURCE_DIR>/backends/imgui_impl_sdlrenderer3.cpp
-                  &&
-                  ${CMAKE_AR} rcs <BINARY_DIR>/libimgui.a <BINARY_DIR>/*.o
-    INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_INSTALL_PREFIX}/include/imgui &&
-                    ${CMAKE_COMMAND} -E copy <BINARY_DIR>/libimgui.a ${CMAKE_INSTALL_PREFIX}/lib/libimgui.a &&
-                    ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/imgui.h ${CMAKE_INSTALL_PREFIX}/include/imgui/ &&
-                    ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/imgui_internal.h ${CMAKE_INSTALL_PREFIX}/include/imgui/ &&
-                    ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/imconfig.h ${CMAKE_INSTALL_PREFIX}/include/imgui/ &&
-                    ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/backends/imgui_impl_sdl3.h ${CMAKE_INSTALL_PREFIX}/include/imgui &&
-                    ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/backends/imgui_impl_sdlrenderer3.h ${CMAKE_INSTALL_PREFIX}/include/imgui
-
+                  COMMAND sh -c "${CMAKE_AR} rcs <BINARY_DIR>/libimgui.a <BINARY_DIR>/*.o"
+    INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_INSTALL_PREFIX}/include/imgui 
+        COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/libimgui.a ${CMAKE_INSTALL_PREFIX}/lib/
+        COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/imgui.h ${CMAKE_INSTALL_PREFIX}/include/imgui/
+        COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/imgui_internal.h ${CMAKE_INSTALL_PREFIX}/include/imgui/
+        COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/imconfig.h ${CMAKE_INSTALL_PREFIX}/include/imgui/
+        COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/backends/imgui_impl_sdl3.h ${CMAKE_INSTALL_PREFIX}/include/imgui
+        COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/backends/imgui_impl_sdlrenderer3.h ${CMAKE_INSTALL_PREFIX}/include/imgui
 )
 
 

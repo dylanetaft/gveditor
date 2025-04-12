@@ -31,7 +31,10 @@ find_package(SDL3 REQUIRED)
 # This is our only executable currently
 add_executable(gvtest test.cpp)
 
-target_link_libraries(gvtest PUBLIC SDL3::SDL3-static libimgui.a)
+
+#find_library(IMGUI_LIBRARY ${CMAKE_INSTALL_PREFIX}/lib/libimgui.a)
+
+target_link_libraries(gvtest PUBLIC SDL3::SDL3-static -limgui)
 
 install(TARGETS gvtest
     RUNTIME DESTINATION bin
