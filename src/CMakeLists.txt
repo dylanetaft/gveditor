@@ -11,10 +11,14 @@ project(gvtest
 
 
 
+find_package(PkgConfig REQUIRED)
+
+find_package(EXPAT REQUIRED)
+find_package(ZLIB REQUIRED)
 
 link_directories(${CMAKE_INSTALL_PREFIX}/lib)
-
-
+pkg_check_modules(libgvc REQUIRED IMPORTED_TARGET libgvc)
+pkg_check_modules(libxdot REQUIRED IMPORTED_TARGET libxdot)
 
 # Collect our header files
 file(GLOB GVTEST_HEADERS_LIST CONFIGURE_DEPENDS ${MyProject_SOURCE_DIR}/include/*.h)
@@ -29,12 +33,25 @@ set(GVTEST_SRC_LIST
 find_package(SDL3 REQUIRED)
 
 # This is our only executable currently
-add_executable(gvtest test.cpp)
-
+add_executable(gvtest test.cpp ${IMGUI_SOURCES})
+message(STATUS "IMGUI_SOURCES: ${IMGUI_SOURCES}")
+message(STATUS "IMGUI_HEADERS: ${IMGUI_HEADERS}")
+target_include_directories(gvtest private ${IMGUI_HEADERS})
 
 #find_library(IMGUI_LIBRARY ${CMAKE_INSTALL_PREFIX}/lib/libimgui.a)
 
-target_link_libraries(gvtest PUBLIC SDL3::SDL3-static -limgui)
+# Add libs manually in dependency order
+target_link_libraries(gvtest PRIVATE
+    SDL3::SDL3-static
+    -lcgraph
+    -lcdt 
+    -lgvc
+    -lxdot
+    -lpathplan
+    -lz
+    -lexpat
+)
+
 
 install(TARGETS gvtest
     RUNTIME DESTINATION bin

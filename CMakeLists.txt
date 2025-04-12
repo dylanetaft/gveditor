@@ -21,7 +21,29 @@ ExternalProject_Add(
     UPDATE_DISCONNECTED TRUE
 )
 
+ExternalProject_Add (
+    nanosvg
+    GIT_REPOSITORY https://github.com/dylanetaft/nanosvg.git
+    CMAKE_ARGS
+        -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+        -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
+    UPDATE_DISCONNECTED TRUE
+    
+)
 
+ExternalProject_Add(
+    imgui
+    SOURCE_DIR /home/dylanetaft/Projects/imgui
+    #GIT_REPOSITORY https://github.com/dylanetaft/imgui.git
+    #GIT_TAG v1.91.9b
+    DEPENDS sdl
+    UPDATE_DISCONNECTED TRUE
+    CMAKE_ARGS
+        -DIMGUI_BACKEND_SDLRENDERER3=ON
+        -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
+    INSTALL_COMMAND ""
+)
+#[[
 ExternalProject_Add(
     imgui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
@@ -56,7 +78,7 @@ ExternalProject_Add(
         COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/backends/imgui_impl_sdl3.h ${CMAKE_INSTALL_PREFIX}/include/imgui
         COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/backends/imgui_impl_sdlrenderer3.h ${CMAKE_INSTALL_PREFIX}/include/imgui
 )
-
+]]#
 
 
 ExternalProject_Add(
@@ -67,9 +89,7 @@ ExternalProject_Add(
     #WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/graphviz
     URL https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/12.2.1/graphviz-12.2.1.tar.gz
     BUILD_IN_SOURCE 1
-    CONFIGURE_COMMAND sh -c "./configure --prefix=${CMAKE_INSTALL_PREFIX} --with-qt=no --with-gtk-no --with-x=no --with-gtkgl=no --with-glut=no --enable-php=no --enable-r=no --disable-shared --enable-static"
-    #BUILD_COMMAND ${MAKE_EXECUTABLE}
-    #INSTALL_COMMAND sh -c "${MAKE_EXECUTABLE} install"
+    CONFIGURE_COMMAND sh -c "./configure --prefix=${CMAKE_INSTALL_PREFIX} --disable-ltdl --with-qt=no --with-gtk-no --with-x=no --with-gtkgl=no --with-glut=no --enable-php=no --enable-r=no --disable-shared --enable-static"
     DOWNLOAD_EXTRACT_TIMESTAMP ON
 )
 
@@ -80,7 +100,7 @@ ExternalProject_Add(
     CMAKE_ARGS 
         -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
         -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
-    DEPENDS sdl imgui graphviz
+    DEPENDS sdl imgui graphviz nanosvg
     BUILD_ALWAYS TRUE
 )
 

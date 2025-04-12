@@ -1,14 +1,55 @@
-#include <imgui/imgui.h>
-#include <imgui/imgui_impl_sdl3.h>
-#include <imgui/imgui_impl_sdlrenderer3.h>
+#include <imgui.h>
+//#include <imgui/imgui_impl_sdl3.h>
+//#include <imgui/imgui_impl_sdlrenderer3.h>
 
 #include <stdio.h>
 #include <SDL3/SDL.h>
+
+#include <graphviz/cgraph.h>
+#include <graphviz/gvc.h>
+
+#include <nanosvg/nanosvg.h>
+#include <nanosvg/nanosvgrast.h>
 
 #ifdef __EMSCRIPTEN__
 #include "../libs/emscripten/emscripten_mainloop_stub.h"
 #endif
 
+void rGraph();
+
+
+void rGraph() {
+    const char *dot = "digraph G { A -> B; B -> C; C -> A; }";
+    // Create Graphviz context
+    GVC_t *gvc = gvContext();
+    // Read graph from DOT string
+    Agraph_t *graph = agmemread(dot);
+    if (!graph) {
+
+    }
+
+    // Layout graph
+    gvLayout(gvc, graph, "dot");
+
+    // Render to SVG in memory
+    char *svg_output = nullptr;
+    unsigned int length;
+    gvRenderData(gvc, graph, "svg", &svg_output, &length);
+
+    // svg_output now contains SVG data in memory, and is null-terminated
+
+    char svg_data_nsvg[length];
+    memcpy(svg_data, svg_output, length);
+    NSVGimage* img = nsvgParse(svg_data, "px", 96.0f);
+   
+
+    // Clean up
+    gvFreeRenderData(svg_output);
+    gvFreeLayout(gvc, graph);
+    agclose(graph);
+    gvFreeContext(gvc);
+    nsvgDelete(img);
+}
 
 
 // Main code
