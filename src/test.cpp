@@ -58,13 +58,16 @@ void renderGraph(std::vector<uint8_t> &imgData, int &w, int &h) {
 
     char nanosvg_data[length];
     memcpy(nanosvg_data, svg_output, length);
-    NSVGimage* img = nsvgParse(nanosvg_data, "px", 96.0f);
+    NSVGimage* img = nsvgParse(nanosvg_data, "px", 96.0f * 20.0f);
    
-
+    w = img->width;
+    h = img->height;
+    std::cout << "SVG size: " << w << "x" << h << std::endl;
     NSVGrasterizer* rast = nsvgCreateRasterizer();
-    imgData.resize(img->width * img->height * 4); // RGBA format
+    imgData.resize(w * h * 4); // RGBA format
 
-    nsvgRasterize(rast, img, 0, 0, 1.0f, imgData.data(), img->width, img->height, img->width * 4);
+
+    nsvgRasterize(rast, img, 0, 0, 1.0f, imgData.data(), w, h, w * 4);
     nsvgDeleteRasterizer(rast);
 
     // Clean up
@@ -106,10 +109,12 @@ int main(int, char**)
     SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
     SDL_ShowWindow(window);
 
+    std::cout << "Window DPI:" << SDL_GetWindowPixelDensity(window) << std::endl;
 
     std::vector <uint8_t> imgData;
     int graphW, graphH;
     renderGraph(imgData, graphW, graphH);
+    std::cout << "Graph size: " << graphW << "x" << graphH << std::endl;
 
     SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, graphW, graphH);
     SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);

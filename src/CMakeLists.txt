@@ -44,15 +44,16 @@ target_link_libraries(gvtest PRIVATE
     nanosvg
     nanosvgrast
     -limgui
-    -lcgraph
-    -lcdt 
-    -lgvc
-    -lxdot
-    -lpathplan
-    -lz
-    -lexpat
     -lgvplugin_core
     -lgvplugin_dot_layout
+    -lgvplugin_neato_layout
+    -lxdot
+    -lgvc
+    -lpathplan
+    -lcgraph
+    -lcdt
+    -lexpat
+    -lz
 )
 
 
