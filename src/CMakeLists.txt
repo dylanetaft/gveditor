@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.17)
 set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "ON" FORCE)
+include(ExternalProject)
 
 # Set the C++ Version
 set(CMAKE_CXX_STANDARD 20)
@@ -32,17 +33,17 @@ set(GVTEST_SRC_LIST
 
 find_package(SDL3 REQUIRED)
 
-# This is our only executable currently
-add_executable(gvtest test.cpp ${IMGUI_SOURCES})
-message(STATUS "IMGUI_SOURCES: ${IMGUI_SOURCES}")
-message(STATUS "IMGUI_HEADERS: ${IMGUI_HEADERS}")
-target_include_directories(gvtest private ${IMGUI_HEADERS})
+add_executable(gvtest test.cpp)
 
-#find_library(IMGUI_LIBRARY ${CMAKE_INSTALL_PREFIX}/lib/libimgui.a)
+
+find_library(IMGUI_LIBRARY ${CMAKE_INSTALL_PREFIX}/lib/libimgui.a)
 
 # Add libs manually in dependency order
 target_link_libraries(gvtest PRIVATE
     SDL3::SDL3-static
+    nanosvg
+    nanosvgrast
+    -limgui
     -lcgraph
     -lcdt 
     -lgvc
@@ -50,6 +51,8 @@ target_link_libraries(gvtest PRIVATE
     -lpathplan
     -lz
     -lexpat
+    -lgvplugin_core
+    -lgvplugin_dot_layout
 )
 
 

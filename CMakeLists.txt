@@ -3,6 +3,7 @@ project(MySuperbuild)
 
 # Add ExternalProject module
 include(ExternalProject)
+include(FetchContent)
 
 SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install) #set library install path
 list(PREPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/install) #make libraries available as they are built
@@ -31,19 +32,8 @@ ExternalProject_Add (
     
 )
 
-ExternalProject_Add(
-    imgui
-    SOURCE_DIR /home/dylanetaft/Projects/imgui
-    #GIT_REPOSITORY https://github.com/dylanetaft/imgui.git
-    #GIT_TAG v1.91.9b
-    DEPENDS sdl
-    UPDATE_DISCONNECTED TRUE
-    CMAKE_ARGS
-        -DIMGUI_BACKEND_SDLRENDERER3=ON
-        -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
-    INSTALL_COMMAND ""
-)
-#[[
+
+
 ExternalProject_Add(
     imgui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
@@ -78,7 +68,7 @@ ExternalProject_Add(
         COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/backends/imgui_impl_sdl3.h ${CMAKE_INSTALL_PREFIX}/include/imgui
         COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/backends/imgui_impl_sdlrenderer3.h ${CMAKE_INSTALL_PREFIX}/include/imgui
 )
-]]#
+
 
 
 ExternalProject_Add(
@@ -100,7 +90,7 @@ ExternalProject_Add(
     CMAKE_ARGS 
         -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
         -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
-    DEPENDS sdl imgui graphviz nanosvg
+    DEPENDS sdl graphviz imgui nanosvg
     BUILD_ALWAYS TRUE
 )
 

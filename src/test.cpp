@@ -1,6 +1,8 @@
-#include <imgui.h>
-//#include <imgui/imgui_impl_sdl3.h>
-//#include <imgui/imgui_impl_sdlrenderer3.h>
+#include <vector>
+
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_sdl3.h>
+#include <imgui/imgui_impl_sdlrenderer3.h>
 
 #include <stdio.h>
 #include <SDL3/SDL.h>
@@ -10,18 +12,33 @@
 
 #include <nanosvg/nanosvg.h>
 #include <nanosvg/nanosvgrast.h>
-
+#include <iostream>
 #ifdef __EMSCRIPTEN__
 #include "../libs/emscripten/emscripten_mainloop_stub.h"
 #endif
 
-void rGraph();
+extern "C" {
+    extern gvplugin_library_t gvplugin_dot_layout_LTX_library;
+    extern gvplugin_library_t gvplugin_core_LTX_library; //gvrender_core_svg.c
+    lt_symlist_t lt_preloaded_symbols[] = {
+	{ "gvplugin_dot_layout_LTX_library", &gvplugin_dot_layout_LTX_library },
+    { "gvplugin_core_LTX_library",&gvplugin_core_LTX_library }, 
+    { NULL, NULL }
+    };
+}
+
+void renderGraph(std::vector<uint8_t> &imgDat, int &w, int &h);
 
 
-void rGraph() {
+void renderGraph(std::vector<uint8_t> &imgData, int &w, int &h) {
+    
     const char *dot = "digraph G { A -> B; B -> C; C -> A; }";
     // Create Graphviz context
-    GVC_t *gvc = gvContext();
+    //GVC_t *gvc = gvContext();
+    extern lt_symlist_t lt_preloaded_symbols[];
+    GVC_t *gvc = gvContextPlugins(lt_preloaded_symbols, 0);
+
+    //gvContextPlugins
     // Read graph from DOT string
     Agraph_t *graph = agmemread(dot);
     if (!graph) {
@@ -35,13 +52,20 @@ void rGraph() {
     char *svg_output = nullptr;
     unsigned int length;
     gvRenderData(gvc, graph, "svg", &svg_output, &length);
+    std::cout << svg_output << std::endl;
 
     // svg_output now contains SVG data in memory, and is null-terminated
 
-    char svg_data_nsvg[length];
-    memcpy(svg_data, svg_output, length);
-    NSVGimage* img = nsvgParse(svg_data, "px", 96.0f);
+    char nanosvg_data[length];
+    memcpy(nanosvg_data, svg_output, length);
+    NSVGimage* img = nsvgParse(nanosvg_data, "px", 96.0f);
    
+
+    NSVGrasterizer* rast = nsvgCreateRasterizer();
+    imgData.resize(img->width * img->height * 4); // RGBA format
+
+    nsvgRasterize(rast, img, 0, 0, 1.0f, imgData.data(), img->width, img->height, img->width * 4);
+    nsvgDeleteRasterizer(rast);
 
     // Clean up
     gvFreeRenderData(svg_output);
@@ -49,6 +73,7 @@ void rGraph() {
     agclose(graph);
     gvFreeContext(gvc);
     nsvgDelete(img);
+    
 }
 
 
@@ -81,6 +106,16 @@ int main(int, char**)
     SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
     SDL_ShowWindow(window);
 
+
+    std::vector <uint8_t> imgData;
+    int graphW, graphH;
+    renderGraph(imgData, graphW, graphH);
+
+    SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, graphW, graphH);
+    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+    SDL_UpdateTexture(texture, nullptr, imgData.data(), graphW * 4);
+
+    
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -161,7 +196,9 @@ int main(int, char**)
 
 
             ImGui::BeginChild("2", ImVec2(-1.0f, -1.0f), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeX);
-            ImGui::Text("Hello, world!"); // Display some text (you can use a format string too)
+
+            //   IMGUI_API void          Image(ImTextureID user_texture_id, const ImVec2& image_size, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1));
+            ImGui::Image((ImTextureID)(intptr_t)texture, ImVec2(graphW, graphH));
             ImGui::EndChild();
             
 
