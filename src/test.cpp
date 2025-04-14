@@ -13,6 +13,8 @@
 #include <nanosvg/nanosvg.h>
 #include <nanosvg/nanosvgrast.h>
 #include <iostream>
+#include <math.h>
+
 #ifdef __EMSCRIPTEN__
 #include "../libs/emscripten/emscripten_mainloop_stub.h"
 #endif
@@ -27,10 +29,10 @@ extern "C" {
     };
 }
 
-void renderGraph(std::vector<uint8_t> &imgDat, int &w, int &h);
+void renderGraph(int inMaxW, int inMaxH, std::vector<uint8_t> &outImg,int &outW, int &outH);
 
 
-void renderGraph(std::vector<uint8_t> &imgData, int &w, int &h) {
+void renderGraph(int inMaxW, int inMaxH, std::vector<uint8_t> &outImg,int &outW, int &outH) {
     
     const char *dot = "digraph G { A -> B; B -> C; C -> A; }";
     // Create Graphviz context
@@ -52,22 +54,36 @@ void renderGraph(std::vector<uint8_t> &imgData, int &w, int &h) {
     char *svg_output = nullptr;
     unsigned int length;
     gvRenderData(gvc, graph, "svg", &svg_output, &length);
-    std::cout << svg_output << std::endl;
+
 
     // svg_output now contains SVG data in memory, and is null-terminated
 
     char nanosvg_data[length];
     memcpy(nanosvg_data, svg_output, length);
-    NSVGimage* img = nsvgParse(nanosvg_data, "px", 96.0f * 20.0f);
-   
-    w = img->width;
-    h = img->height;
-    std::cout << "SVG size: " << w << "x" << h << std::endl;
+    NSVGimage* img = nsvgParse(nanosvg_data, "px", 96.0f);
+    float &imW = img->width;
+    float &imH = img->height;
+
     NSVGrasterizer* rast = nsvgCreateRasterizer();
-    imgData.resize(w * h * 4); // RGBA format
+   
 
+    float scalex = (float)inMaxW / imW;
+    float scaley = (float)inMaxH / imH;
+    float maxScale;
+    if (scalex > scaley) {
+        maxScale = scaley;
+    } else {
+        maxScale = scalex;
+    }
+    std::cout << "In MaX Dimensions" << inMaxW << "x" << inMaxH << std::endl;
+    std::cout << "Image Dimensions" << imW << "x" << imH << std::endl;
+    std::cout << "Scale: " << maxScale << std::endl;
+    // Scale the image to fit within the specified dimensions
+    outW = (int)ceil(imW * maxScale);
+    outH = (int)ceil(imH * maxScale);
+    outImg.resize(outW * outH * 4); // RGBA format
 
-    nsvgRasterize(rast, img, 0, 0, 1.0f, imgData.data(), w, h, w * 4);
+    nsvgRasterize(rast, img, 0, 0, maxScale, outImg.data(), outW, outH, outW * 4);
     nsvgDeleteRasterizer(rast);
 
     // Clean up
@@ -93,7 +109,7 @@ int main(int, char**)
 
     // Create window with SDL_Renderer graphics context
     Uint32 window_flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY;
-    SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL3+SDL_Renderer example", 1280, 720, window_flags);
+    SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL3+SDL_Renderer example", 1920, 1080, window_flags);
     if (window == nullptr)
     {
         printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
@@ -109,22 +125,15 @@ int main(int, char**)
     SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
     SDL_ShowWindow(window);
 
-    std::cout << "Window DPI:" << SDL_GetWindowPixelDensity(window) << std::endl;
+    
 
-    std::vector <uint8_t> imgData;
-    int graphW, graphH;
-    renderGraph(imgData, graphW, graphH);
-    std::cout << "Graph size: " << graphW << "x" << graphH << std::endl;
-
-    SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, graphW, graphH);
-    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
-    SDL_UpdateTexture(texture, nullptr, imgData.data(), graphW * 4);
 
     
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGuiIO& io = ImGui::GetIO();
+
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
@@ -141,6 +150,15 @@ int main(int, char**)
     bool show_demo_window = true;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+
+    std::vector <uint8_t> imgData;
+    int graphW, graphH;
+    renderGraph( int(1920 / 2 * 0.95f),int(1080 * 0.95f), imgData, graphW, graphH);
+    std::cout << "Graph size: " << graphW << "x" << graphH << std::endl;
+    SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, graphW, graphH);
+    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+    SDL_UpdateTexture(texture, nullptr, imgData.data(), graphW * 4);
 
     // Main loop
     bool done = false;
@@ -185,14 +203,13 @@ int main(int, char**)
 
    
         {
-            ImGuiIO& io = ImGui::GetIO();
             ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
             ImGui::SetNextWindowSize(io.DisplaySize);
             ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
             ImGui::Begin("Hello, world!",  NULL, ImGuiWindowFlags_NoDecoration);                           // Create a window called "Hello, world!" and append into it.
             ImGui::PopStyleVar();
            
-            ImGui::BeginChild("1", ImVec2(io.DisplaySize.x * 0.5f, 0), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX);
+            ImGui::BeginChild("1", ImVec2(io.DisplaySize.x * 0.5f, -1.0f), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX);
             char buffer [1024] = "";
             ImGui::InputTextMultiline("##Input",buffer,sizeof(buffer),ImVec2(-1.0f, -1.0f));
             ImGui::EndChild();
